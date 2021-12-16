@@ -44,7 +44,6 @@ logger.addHandler(handler)
 
 def send_message(bot, message):
     """Отправка сообщения ботом."""
-
     try:
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
@@ -118,7 +117,7 @@ def check_tokens():
 
 
 def check_message(message):
-    """Проверка на повторную отправку ошибок"""
+    """Проверка на повторную отправку ошибок."""
     if not MESSAGES or message != MESSAGES[-1]:
         MESSAGES.append(message)
         return True
