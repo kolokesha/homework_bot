@@ -44,12 +44,13 @@ logger.addHandler(handler)
 
 def send_message(bot, message):
     """Отправка сообщения ботом"""
+
     try:
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
             text=message
         )
-        logger.info(f'Удачная отправка сообщения')
+        logger.info('Удачная отправка сообщения')
     except FailedSendMessage:
         logger.error(FailedSendMessage())
         raise FailedSendMessage()
@@ -57,6 +58,7 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Получение ответа"""
+
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -79,6 +81,7 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверка ответа"""
+
     try:
         if 'homeworks' in response:
             if not isinstance(response['homeworks'], list):
@@ -93,6 +96,7 @@ def check_response(response):
 
 def parse_status(homework):
     """Получение названия и статуса работы и проверка на его изменение"""
+
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if not homework_name and not homework_status:
@@ -110,6 +114,7 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка на наличие обязательных переменных в env"""
+
     if not (PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID):
         logger.critical('Не хвататет одной или нескольких переменных')
         return False
@@ -118,6 +123,7 @@ def check_tokens():
 
 def check_message(message):
     """Проверка на повторную отправку ошибок"""
+
     print(MESSAGES)
     if not MESSAGES or message != MESSAGES[-1]:
         MESSAGES.append(message)
@@ -127,6 +133,7 @@ def check_message(message):
 
 def main():
     """Основная логика работы бота."""
+
     if check_tokens():
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
         current_timestamp = int(time.time())
