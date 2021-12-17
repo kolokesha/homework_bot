@@ -1,8 +1,3 @@
-class CheckTokensError(Exception):
-    def __str__(self):
-        return f'Не хвататет одной или нескольких переменных'
-
-
 class MissingHomework(Exception):
     def __str__(self):
         return f'Отсутствует ключ homeworks в ответе'
@@ -25,7 +20,7 @@ class EmptyEndpoint(Exception):
 
 class ApiConnectError(Exception):
     def __str__(self):
-        return f'Ошибка при запросе к основному API'
+        return f'Ошибка при запросе к основному API:'
 
 
 class MissingHomeworkName(Exception):

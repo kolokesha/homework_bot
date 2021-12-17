@@ -8,7 +8,7 @@ import requests
 import telegram as telegram
 from dotenv import load_dotenv
 
-from exceptions import (ApiConnectError, CheckTokensError, EmptyEndpoint,
+from exceptions import (ApiConnectError, EmptyEndpoint,
                         FailedSendMessage, HomeworkNotList, MissingHomework,
                         MissingHomeworkName, MissingHomeworkStatusInDict,
                         UnavailableServer)
@@ -19,7 +19,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 600
+RETRY_TIME = 2
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -51,8 +51,7 @@ def send_message(bot, message):
         )
         logger.info('Удачная отправка сообщения')
     except FailedSendMessage:
-        logger.error(FailedSendMessage())
-        raise FailedSendMessage()
+        logger.error('Не удалось отпрвить сообщение')
 
 
 def get_api_answer(current_timestamp):
@@ -65,27 +64,23 @@ def get_api_answer(current_timestamp):
             headers=HEADERS,
             params=params
         )
-    except ApiConnectError:
-        logger.error(ApiConnectError())
-        raise ApiConnectError()
+    except Exception as error:
+        print(f'{ApiConnectError()} {error}')
     if homework_statuses.status_code != HTTPStatus.OK:
-        logger.error(UnavailableServer())
         raise UnavailableServer()
     if homework_statuses:
         return homework_statuses.json()
-    logger.error(EmptyEndpoint())
     raise EmptyEndpoint()
 
 
 def check_response(response):
     """Проверка ответа."""
-    try:
-        if 'homeworks' in response:
-            if not isinstance(response['homeworks'], list):
-                logger.error(HomeworkNotList())
-                raise HomeworkNotList()
-    except MissingHomework:
-        logger.error(MissingHomework())
+    if not isinstance(response, dict):
+        raise TypeError
+    if 'homeworks' in response:
+        if not isinstance(response['homeworks'], list):
+            raise HomeworkNotList()
+    else:
         raise MissingHomework()
     homework = response['homeworks']
     return homework
@@ -96,11 +91,9 @@ def parse_status(homework):
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if not homework_name and not homework_status:
-        logger.error(MissingHomeworkName())
         raise MissingHomeworkName()
 
     if homework_status not in HOMEWORK_STATUSES:
-        logger.error(MissingHomeworkStatusInDict())
         raise (MissingHomeworkStatusInDict())
 
     verdict = HOMEWORK_STATUSES[homework_status]
@@ -110,8 +103,18 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка на наличие обязательных переменных в env."""
-    if not (PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID):
-        logger.critical('Не хвататет одной или нескольких переменных')
+    tokens = {
+        'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
+        'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
+        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
+    }
+    missing_tokens = []
+    for key, value in tokens.items():
+        if not value:
+            missing_tokens.append(key)
+    if missing_tokens:
+        logger.critical(f'Не хвататет одной или нескольких переменных'
+                        f' {*missing_tokens,}')
         return False
     return True
 
@@ -126,27 +129,26 @@ def check_message(message):
 
 def main():
     """Основная логика работы бота."""
-    if check_tokens():
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        current_timestamp = int(time.time())
-    else:
-        raise CheckTokensError()
+    check_tokens()
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    current_timestamp = 0
     while True:
         try:
             response = get_api_answer(current_timestamp)
+            if 'current_timestamp' in response:
+                current_timestamp = response['current_timestamp']
             homework = check_response(response)
-            current_timestamp += RETRY_TIME
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
+            logger.error(error)
             if check_message(message):
                 send_message(bot, message)
                 time.sleep(RETRY_TIME)
         else:
-            message = ''
             if homework:
                 message = parse_status(homework[0])
-            if message:
-                send_message(bot, message)
+                if check_message(message):
+                    send_message(bot, message)
             time.sleep(RETRY_TIME)
 
 
