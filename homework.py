@@ -9,8 +9,7 @@ import requests
 import telegram as telegram
 from dotenv import load_dotenv
 
-from exceptions import (ApiConnectError, EmptyEndpoint,
-                        FailedSendMessage, HomeworkNotList, MissingHomework,
+from exceptions import (ApiConnectError, HomeworkNotList, MissingHomework,
                         MissingHomeworkName, MissingHomeworkStatusInDict,
                         UnavailableServer)
 
@@ -20,7 +19,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 200
+RETRY_TIME = 300
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
