@@ -9,8 +9,12 @@ class HomeworkNotList(Exception):
 
 
 class UnavailableServer(Exception):
+    def __init__(self, code):
+        self.code = code
+        self.message = f'Сервис недоступен, код ответа:{code}'
+
     def __str__(self):
-        return f'Сервис недоступен'
+        return self.message
 
 
 class EmptyEndpoint(Exception):
@@ -19,8 +23,12 @@ class EmptyEndpoint(Exception):
 
 
 class ApiConnectError(Exception):
+    def __init__(self, error):
+        self.error = error
+        self.message = f'Ошибка при запросе к основному API:{error}'
+
     def __str__(self):
-        return f'Ошибка при запросе к основному API:'
+        return self.message
 
 
 class MissingHomeworkName(Exception):

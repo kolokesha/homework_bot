@@ -19,7 +19,7 @@ PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-RETRY_TIME = 300
+RETRY_TIME = 2
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
@@ -65,9 +65,9 @@ def get_api_answer(current_timestamp):
             params=params
         )
     except requests.exceptions.RequestException as error:
-        logging.error(f'{ApiConnectError()} {error}')
+        raise ApiConnectError(error)
     if homework_statuses.status_code != HTTPStatus.OK:
-        raise UnavailableServer()
+        raise UnavailableServer(homework_statuses.status_code)
     try:
         homework_statuses = homework_statuses.json()
     except json.JSONDecodeError as error:
@@ -130,7 +130,7 @@ def check_message(message, prev_message):
 
 def main():
     """Основная логика работы бота."""
-    prev_message = ''
+    prev_message = None
     check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
@@ -149,7 +149,9 @@ def main():
         else:
             if homework:
                 message = parse_status(homework[0])
-                send_message(bot, message)
+                if check_message(message, prev_message):
+                    prev_message = message
+                    send_message(bot, message)
         time.sleep(RETRY_TIME)
 
 
